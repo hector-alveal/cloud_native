@@ -1,0 +1,43 @@
+<div class="product-card">
+
+    <div class="product-image">
+
+        <img
+            [src]="producto.imagen"
+            [alt]="producto.nombre"
+        >
+
+    </div>
+
+    <div class="product-info">
+
+        <h3>
+            {{ producto.nombre }}
+        </h3>
+
+        <p>
+            {{ producto.descripcion }}
+        </p>
+
+        <span class="category">
+            {{ producto.categoria }}
+        </span>
+
+        <h4>
+            ${{ producto.precio | number:'1.0-0' }}
+        </h4>
+
+        <p class="stock">
+            Stock: {{ producto.stock }}
+        </p>
+
+        <button
+            (click)="agregarAlCarrito()">
+
+            Agregar al carrito
+
+        </button>
+
+    </div>
+
+</div>

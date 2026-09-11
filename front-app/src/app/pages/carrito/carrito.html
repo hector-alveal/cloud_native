@@ -1,0 +1,99 @@
+<section class="carrito">
+
+    <h1>Mi carrito 🛒</h1>
+
+    @if (items.length === 0) {
+
+        <div class="carrito-vacio">
+
+            <h2>Tu carrito está vacío</h2>
+
+            <p>
+                Agrega algunas hamburguesas para comenzar.
+            </p>
+
+        </div>
+
+    } @else {
+
+        <div class="carrito-items">
+
+            @for (item of items; track item.producto.id) {
+
+                <div class="cart-item">
+
+                    <img
+                        [src]="item.producto.imagen"
+                        [alt]="item.producto.nombre"
+                    >
+
+                    <div class="cart-info">
+
+                        <h3>
+                            {{ item.producto.nombre }}
+                        </h3>
+
+                        <p>
+                            ${{ item.producto.precio | number:'1.0-0' }}
+                        </p>
+
+                    </div>
+
+                    <div class="cantidad">
+
+                        <button
+                            (click)="disminuir(item.producto.id)">
+                            -
+                        </button>
+
+                        <span>
+                            {{ item.cantidad }}
+                        </span>
+
+                        <button
+                            (click)="aumentar(item.producto.id)">
+                            +
+                        </button>
+
+                    </div>
+
+                    <button
+                        class="eliminar"
+                        (click)="eliminar(item.producto.id)">
+
+                        Eliminar
+
+                    </button>
+
+                </div>
+
+            }
+
+        </div>
+
+        <div class="carrito-resumen">
+
+            <h2>
+                Total:
+                ${{ obtenerTotal() | number:'1.0-0' }}
+            </h2>
+
+            <button
+                class="vaciar"
+                (click)="vaciar()">
+
+                Vaciar carrito
+
+            </button>
+
+            <button class="comprar">
+
+                Continuar compra
+
+            </button>
+
+        </div>
+
+    }
+
+</section>

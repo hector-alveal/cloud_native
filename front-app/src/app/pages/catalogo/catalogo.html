@@ -1,0 +1,25 @@
+<section class="catalogo">
+
+    <div class="catalogo-header">
+
+        <h1>Nuestro menú 🍔</h1>
+
+        <p>
+            Elige tus hamburguesas y productos favoritos.
+        </p>
+
+    </div>
+
+    <div class="productos-grid">
+
+        @for (producto of productos; track producto.id) {
+
+            <app-producto-card
+                [producto]="producto">
+            </app-producto-card>
+
+        }
+
+    </div>
+
+</section>
