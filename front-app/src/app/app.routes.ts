@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { MsalGuard } from '@azure/msal-angular';
 
 import { HomeComponent } from './pages/home/home';
 import { CatalogoComponent } from './pages/catalogo/catalogo';
@@ -18,13 +19,15 @@ export const routes: Routes = [
     },
 
     {
+        // Protegida: si no hay sesion iniciada, MsalGuard redirige automaticamente al login de Azure AD
         path: 'carrito',
-        component: CarritoComponent
+        component: CarritoComponent,
+        canActivate: [MsalGuard]
     },
 
-    { 
-        path: 'login', 
-        component: LoginComponent 
+    {
+        path: 'login',
+        component: LoginComponent
     }
 
 ];

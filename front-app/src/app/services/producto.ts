@@ -1,20 +1,27 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
 import { Producto } from '../components/models/producto';
-import { PRODUCTOS } from '../components/data/producto';
+import { environment } from '../../environments/environment';
 
 @Injectable({
     providedIn: 'root'
 })
 export class ProductoService {
 
-    private productos: Producto[] = PRODUCTOS;
+    private http = inject(HttpClient);
 
-    obtenerProductos(): Producto[] {
-        return this.productos;
+    // Llama al microservicio productos-catalogo a traves del API Manager (AWS API Gateway).
+    // El JWT se adjunta automaticamente gracias al MsalInterceptor configurado en app.config.ts.
+    private baseUrl = `${environment.apiBaseUrl}/api/productos`;
+
+    obtenerProductos(): Observable<Producto[]> {
+        return this.http.get<Producto[]>(this.baseUrl);
     }
 
-    obtenerProductoPorId(id: number): Producto | undefined {
-        return this.productos.find(producto => producto.id === id);
+    obtenerProductoPorId(id: number): Observable<Producto> {
+        return this.http.get<Producto>(`${this.baseUrl}/${id}`);
     }
 
 }

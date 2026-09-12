@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 
 import { CarritoService } from '../../services/carrito';
@@ -10,9 +10,10 @@ import { ItemCarrito } from '../../components/models/carrito';
     templateUrl: './carrito.html',
     styleUrl: './carrito.css'
 })
-export class CarritoComponent {
+export class CarritoComponent implements OnInit {
 
     items: ItemCarrito[] = [];
+    cargando = true;
 
     constructor(
         private carritoService: CarritoService
@@ -20,53 +21,81 @@ export class CarritoComponent {
 
     ngOnInit(): void {
 
-        this.items =
-            this.carritoService.obtenerItems();
+        this.cargarCarrito();
 
     }
 
-    aumentar(id: number): void {
+    aumentar(item: ItemCarrito): void {
 
-        this.carritoService.aumentarCantidad(id);
+        if (!item.backendId) return;
 
-        this.actualizarCarrito();
-
-    }
-
-    disminuir(id: number): void {
-
-        this.carritoService.disminuirCantidad(id);
-
-        this.actualizarCarrito();
+        this.carritoService
+            .actualizarCantidad(item.backendId, item.cantidad + 1)
+            .subscribe(() => this.cargarCarrito());
 
     }
 
-    eliminar(id: number): void {
+    disminuir(item: ItemCarrito): void {
 
-        this.carritoService.eliminarProducto(id);
+        if (!item.backendId) return;
 
-        this.actualizarCarrito();
+        if (item.cantidad <= 1) {
+            this.eliminar(item);
+            return;
+        }
+
+        this.carritoService
+            .actualizarCantidad(item.backendId, item.cantidad - 1)
+            .subscribe(() => this.cargarCarrito());
+
+    }
+
+    eliminar(item: ItemCarrito): void {
+
+        if (!item.backendId) return;
+
+        this.carritoService
+            .eliminarItem(item.backendId)
+            .subscribe(() => this.cargarCarrito());
 
     }
 
     vaciar(): void {
 
-        this.carritoService.vaciarCarrito();
+        this.items
+            .filter((item) => item.backendId)
+            .forEach((item) => {
+                this.carritoService.eliminarItem(item.backendId!).subscribe();
+            });
 
-        this.actualizarCarrito();
+        // Pequeña espera para que las eliminaciones lleguen al backend antes de refrescar
+        setTimeout(() => this.cargarCarrito(), 400);
 
     }
 
     obtenerTotal(): number {
 
-        return this.carritoService.calcularTotal();
+        return this.items.reduce(
+            (total, item) => total + (item.producto.precio * item.cantidad),
+            0
+        );
 
     }
 
-    private actualizarCarrito(): void {
+    private cargarCarrito(): void {
 
-        this.items =
-            this.carritoService.obtenerItems();
+        this.cargando = true;
+
+        this.carritoService.obtenerItems().subscribe({
+            next: (items) => {
+                this.items = items;
+                this.cargando = false;
+            },
+            error: (err) => {
+                console.error('Error al obtener el carrito desde el API Gateway', err);
+                this.cargando = false;
+            }
+        });
 
     }
 

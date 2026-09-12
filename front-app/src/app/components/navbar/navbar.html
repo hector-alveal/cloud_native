@@ -21,9 +21,23 @@
                 🛒 Carrito
             </a>
 
-            <a routerLink="/login" routerLinkActive="active">
-                Iniciar sesión
-            </a>
+            @if (nombreUsuario) {
+
+                <span class="usuario-activo">
+                    👤 {{ nombreUsuario }}
+                </span>
+
+                <button class="btn-logout" (click)="cerrarSesion()">
+                    Cerrar sesión
+                </button>
+
+            } @else {
+
+                <a routerLink="/login" routerLinkActive="active">
+                    Iniciar sesión
+                </a>
+
+            }
 
         </div>
 

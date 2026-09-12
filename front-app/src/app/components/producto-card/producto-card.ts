@@ -20,13 +20,15 @@ export class ProductCardComponent {
 
     agregarAlCarrito(): void {
 
-        this.carritoService.agregarProducto(
-            this.producto
-        );
-
-        alert(
-            `${this.producto.nombre} fue agregado al carrito`
-        );
+        this.carritoService.agregarProducto(this.producto).subscribe({
+            next: () => {
+                alert(`${this.producto.nombre} fue agregado al carrito`);
+            },
+            error: (err) => {
+                console.error('Error al agregar al carrito', err);
+                alert('No se pudo agregar el producto. ¿Iniciaste sesión?');
+            }
+        });
 
     }
 

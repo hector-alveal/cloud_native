@@ -2,7 +2,11 @@
 
     <h1>Mi carrito 🛒</h1>
 
-    @if (items.length === 0) {
+    @if (cargando) {
+
+        <p>Cargando tu carrito...</p>
+
+    } @else if (items.length === 0) {
 
         <div class="carrito-vacio">
 
@@ -42,7 +46,7 @@
                     <div class="cantidad">
 
                         <button
-                            (click)="disminuir(item.producto.id)">
+                            (click)="disminuir(item)">
                             -
                         </button>
 
@@ -51,7 +55,7 @@
                         </span>
 
                         <button
-                            (click)="aumentar(item.producto.id)">
+                            (click)="aumentar(item)">
                             +
                         </button>
 
@@ -59,7 +63,7 @@
 
                     <button
                         class="eliminar"
-                        (click)="eliminar(item.producto.id)">
+                        (click)="eliminar(item)">
 
                         Eliminar
 

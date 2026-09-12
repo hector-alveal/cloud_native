@@ -10,16 +10,28 @@
 
     </div>
 
-    <div class="productos-grid">
+    @if (cargando) {
 
-        @for (producto of productos; track producto.id) {
+        <p>Cargando productos...</p>
 
-            <app-producto-card
-                [producto]="producto">
-            </app-producto-card>
+    } @else if (error) {
 
-        }
+        <p class="error">{{ error }}</p>
 
-    </div>
+    } @else {
+
+        <div class="productos-grid">
+
+            @for (producto of productos; track producto.id) {
+
+                <app-producto-card
+                    [producto]="producto">
+                </app-producto-card>
+
+            }
+
+        </div>
+
+    }
 
 </section>

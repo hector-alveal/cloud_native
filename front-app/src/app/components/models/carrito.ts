@@ -6,6 +6,9 @@ export interface ItemCarrito {
 
     cantidad: number;
 
+    // Id de la fila en el backend (venta-carrito). Se usa para actualizar/eliminar el item.
+    backendId?: number;
+
 }
 
 export interface Carrito {

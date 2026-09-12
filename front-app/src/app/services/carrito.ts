@@ -1,97 +1,93 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, map } from 'rxjs';
+import { MsalService } from '@azure/msal-angular';
+
 import { Producto } from '../components/models/producto';
 import { ItemCarrito } from '../components/models/carrito';
+import { environment } from '../../environments/environment';
+
+// Forma en la que el backend (venta-carrito) devuelve cada item.
+interface ItemCarritoBackend {
+    id: number;
+    usuarioId: string;
+    productoId: number;
+    nombreProducto: string;
+    cantidad: number;
+    precioUnitario: number;
+    total: number;
+}
 
 @Injectable({
     providedIn: 'root'
 })
 export class CarritoService {
 
-    private items: ItemCarrito[] = [];
+    private http = inject(HttpClient);
+    private msalService = inject(MsalService);
 
-    obtenerItems(): ItemCarrito[] {
+    // Llama al microservicio venta-carrito a traves del API Manager (AWS API Gateway).
+    private baseUrl = `${environment.apiBaseUrl}/api/carrito`;
 
-        return this.items;
-
+    // El usuarioId viene de la cuenta autenticada con MSAL (no se inventa en el frontend).
+    private obtenerUsuarioId(): string {
+        const cuenta = this.msalService.instance.getActiveAccount();
+        return cuenta?.localAccountId ?? cuenta?.username ?? 'usuario-anonimo';
     }
 
-    agregarProducto(producto: Producto): void {
+    obtenerItems(): Observable<ItemCarrito[]> {
+        const usuarioId = this.obtenerUsuarioId();
 
-        const itemExistente = this.items.find(
-            item => item.producto.id === producto.id
-        );
-
-        if (itemExistente) {
-
-            itemExistente.cantidad++;
-
-        } else {
-
-            this.items.push({
-                producto: producto,
-                cantidad: 1
-            });
-
-        }
-
+        return this.http
+            .get<ItemCarritoBackend[]>(`${this.baseUrl}/${usuarioId}`)
+            .pipe(
+                map((items) => items.map((item) => this.aItemCarrito(item)))
+            );
     }
 
-    eliminarProducto(id: number): void {
+    agregarProducto(producto: Producto): Observable<ItemCarrito> {
+        const usuarioId = this.obtenerUsuarioId();
 
-        this.items = this.items.filter(
-            item => item.producto.id !== id
-        );
+        const body = {
+            usuarioId,
+            productoId: producto.id,
+            nombreProducto: producto.nombre,
+            cantidad: 1,
+            precioUnitario: producto.precio,
+        };
 
+        return this.http
+            .post<ItemCarritoBackend>(this.baseUrl, body)
+            .pipe(
+                map((item) => this.aItemCarrito(item, producto))
+            );
     }
 
-    aumentarCantidad(id: number): void {
-
-        const item = this.items.find(
-            item => item.producto.id === id
-        );
-
-        if (item) {
-            item.cantidad++;
-        }
-
+    actualizarCantidad(backendId: number, cantidad: number): Observable<ItemCarritoBackend> {
+        return this.http.put<ItemCarritoBackend>(`${this.baseUrl}/${backendId}`, { cantidad });
     }
 
-    disminuirCantidad(id: number): void {
-
-        const item = this.items.find(
-            item => item.producto.id === id
-        );
-
-        if (!item) {
-            return;
-        }
-
-        if (item.cantidad > 1) {
-
-            item.cantidad--;
-
-        } else {
-
-            this.eliminarProducto(id);
-
-        }
-
+    eliminarItem(backendId: number): Observable<void> {
+        return this.http.delete<void>(`${this.baseUrl}/${backendId}`);
     }
 
-    calcularTotal(): number {
-
-        return this.items.reduce(
-            (total, item) =>
-                total + (item.producto.precio * item.cantidad),
-            0
-        );
-
-    }
-
-    vaciarCarrito(): void {
-
-        this.items = [];
-
+    // Convierte la respuesta del backend al modelo que usan las paginas/componentes del front.
+    // Si tenemos el producto completo a mano (recien agregado), lo usamos para no perder
+    // imagen/descripcion/categoria/stock, que el backend de carrito no guarda.
+    private aItemCarrito(item: ItemCarritoBackend, productoCompleto?: Producto): ItemCarrito {
+        return {
+            backendId: item.id,
+            cantidad: item.cantidad,
+            producto: productoCompleto ?? {
+                id: item.productoId,
+                nombre: item.nombreProducto,
+                descripcion: '',
+                precio: item.precioUnitario,
+                imagen: '',
+                categoria: '',
+                stock: 0,
+            },
+        };
     }
 
 }
