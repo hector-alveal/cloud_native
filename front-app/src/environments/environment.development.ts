@@ -14,5 +14,5 @@ export const environment = {
   },
 
   // URL base del API Manager (AWS API Gateway) que protege productos-catalogo y venta-carrito
-  apiBaseUrl: 'https://REEMPLAZAR_CON_TU_API_GATEWAY_URL',
+  apiBaseUrl: 'https://tab2w56317.execute-api.us-east-1.amazonaws.com',
 };

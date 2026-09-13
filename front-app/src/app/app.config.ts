@@ -1,4 +1,11 @@
-import { ApplicationConfig, importProvidersFrom, provideBrowserGlobalErrorListeners } from '@angular/core';
+import {
+  ApplicationConfig,
+  importProvidersFrom,
+  inject,
+  provideAppInitializer,
+  provideBrowserGlobalErrorListeners,
+  provideZonelessChangeDetection,
+} from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import {
@@ -14,14 +21,12 @@ import { MSALGuardConfigFactory, MSALInstanceFactory, MSALInterceptorConfigFacto
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    provideZonelessChangeDetection(),
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
 
-    // Habilita HttpClient y deja que el MsalInterceptor (registrado abajo) se enganche
-    // automaticamente en cada peticion HTTP para adjuntar el JWT.
     provideHttpClient(withInterceptorsFromDi()),
 
-    // Registra MSAL (instancia, guard config e interceptor config) en toda la app.
     importProvidersFrom(
       MsalModule.forRoot(
         MSALInstanceFactory(),
@@ -35,5 +40,9 @@ export const appConfig: ApplicationConfig = {
     MsalService,
     MsalGuard,
     MsalBroadcastService,
+    provideAppInitializer(() => {
+      const msalService = inject(MsalService);
+      return msalService.instance.initialize();
+    }),
   ],
 };
