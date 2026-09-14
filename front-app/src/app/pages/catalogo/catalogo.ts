@@ -8,7 +8,16 @@ import { ProductCardComponent } from '../../components/producto-card/producto-ca
     imports: [ ProductCardComponent ],
     templateUrl: './catalogo.html',
     styleUrl: './catalogo.css'
-})
+}) 
+
+
+export class CatalogoComponent { productos: Producto[] = [];
+
+    constructor( private productoService: ProductoService ) {}
+
+    ngOnInit(): void { this.productos = this.productoService.obtenerProductos(); } }
+
+/* 
 export class CatalogoComponent implements OnInit {
 
     productos: Producto[] = [];
@@ -36,3 +45,4 @@ export class CatalogoComponent implements OnInit {
     }
 
 }
+*/

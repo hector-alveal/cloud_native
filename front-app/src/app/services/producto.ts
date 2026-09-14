@@ -1,13 +1,26 @@
-import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Injectable } from '@angular/core';
+
 
 import { Producto } from '../components/models/producto';
-import { environment } from '../../environments/environment';
 
-@Injectable({
+Injectable({
     providedIn: 'root'
 })
+
+import { PRODUCTOS } from '../components/data/producto';
+
+export class ProductoService { 
+    private productos: Producto[] = PRODUCTOS; 
+    obtenerProductos(): Producto[] {
+        return this.productos;
+        }
+        obtenerProductoPorId(id: number): Producto | undefined { 
+            return this.productos.find( 
+                producto => producto.id === id ); } }
+
+
+
+/*  un pequeñotp cambio de momento
 export class ProductoService {
 
     private http = inject(HttpClient);
@@ -24,4 +37,4 @@ export class ProductoService {
         return this.http.get<Producto>(`${this.baseUrl}/${id}`);
     }
 
-}
+} */
