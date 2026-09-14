@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { MsalGuard } from '@azure/msal-angular';
 
 import { HomeComponent } from './pages/home/home';
-import { CatalogoComponent } from './pages/catalogo/catalogo';
+import { CatalogoComponent2 } from './pages/catalogo/catalogo2';
 import { CarritoComponent } from './pages/carrito/carrito';
 import { LoginComponent } from './pages/login/login';
 
@@ -15,7 +15,7 @@ export const routes: Routes = [
 
     {
         path: 'productos',
-        component: CatalogoComponent
+        component: CatalogoComponent2
     },
 
     {

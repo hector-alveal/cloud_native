@@ -10,16 +10,6 @@
 
     </div>
 
-    @if (cargando) {
-
-        <p>Cargando productos...</p>
-
-    } @else if (error) {
-
-        <p class="error">{{ error }}</p>
-
-    } @else {
-
         <div class="productos-grid">
 
             @for (producto of productos; track producto.id) {
@@ -31,7 +21,20 @@
             }
 
         </div>
-
-    }
+    <!--
+        @if (cargando) {
+    
+            <p>Cargando productos...</p>
+    
+        } @else if (error) {
+    
+            <p class="error">{{ error }}</p>
+    
+        } @else {
+    
+            
+    
+        }
+        -->
 
 </section>
