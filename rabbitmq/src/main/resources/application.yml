@@ -1,6 +1,6 @@
 spring:
   application:
-    name: rabbitmq-tutorials
+    name: rabbitmq
 
   rabbitmq:
     host: localhost
@@ -17,4 +17,4 @@ amqp:
     max-interval: 30000
     multiplier: 2.0
 server:
-  port: 8080
+  port: 8082
