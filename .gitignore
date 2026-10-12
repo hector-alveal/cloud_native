@@ -1,0 +1,10 @@
+# Terraform
+infraestructura/terraform/.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+*.tfvars.json
+infraestructura/terraform/credenciales.sh
+
+# AWS SSH keys
+*.pem

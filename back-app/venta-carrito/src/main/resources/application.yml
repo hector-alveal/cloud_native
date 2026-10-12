@@ -1,0 +1,82 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: venta-carrito
+
+  # Conexion a la base de datos cloud (RDS u otra). Las credenciales reales se pasan
+  # por variables de entorno en EC2; los valores despues de ":" son solo para uso local.
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:carrito_db}?createDatabaseIfNotExist=true
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      connection-timeout: 5000          # si la BD no responde, fallar en 5 s (y reintentar) en vez de 30 s
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:admin}
+    password: ${RABBITMQ_PASSWORD:admin123}
+    publisher-confirm-type: correlated    # el broker confirma (ack/nack) cada mensaje publicado
+    publisher-returns: true               # avisa si un mensaje no llego a ninguna cola
+    listener:
+      simple:
+        acknowledge-mode: manual          # cada consumidor hace ACK / NACK explicito
+        prefetch: 1                       # fair dispatch: un mensaje a la vez por consumidor
+        default-requeue-rejected: false   # un mensaje rechazado nunca vuelve a la cola: va a la DLX
+        # Los reintentos NO se hacen con el retry automatico de Spring sino en
+        # EjecutorConReintentos, para decidir explicitamente que error se reintenta.
+
+# Datos de la App Registration en Azure AD (IDaaS)
+azure:
+  ad:
+    tenant-id: ${AZURE_TENANT_ID:a70c6bf7-a13d-4110-9625-747412057e28}
+    client-id: ${AZURE_CLIENT_ID:69ceeda7-0b2f-441c-9c63-f537ab6db86f}
+
+# URL del microservicio de catalogo, por si venta-carrito necesita consultar
+# datos de un producto (nombre, precio) al agregarlo al carrito.
+catalogo:
+  service:
+    url: ${CATALOGO_URL:http://localhost:8081}
+
+pedidos360:
+  cors:
+    origenes-permitidos: ${CORS_ORIGINS:http://localhost:4200,http://52.200.216.83:4200}
+
+  # ---------------------------------------------------------------------------
+  # Topologia RabbitMQ: UNICO lugar donde se definen nombres de exchanges,
+  # routing keys y colas. El codigo los lee desde RabbitMQProperties.
+  # ---------------------------------------------------------------------------
+  rabbitmq:
+    exchanges:
+      pedidos: pedidos.exchange          # direct: eventos del ciclo de vida de un pedido
+      dead-letter: pedidos.dlx           # direct: recibe los mensajes fallidos/expirados
+    routing-keys:
+      pedido-creado: pedido.creado
+    colas:
+      ticket:                            # caso de uso: generar el ticket/comprobante del pedido
+        nombre: pedidos.ticket.queue
+        dlq: pedidos.ticket.dlq
+        dlq-routing-key: pedidos.ticket.dead
+    retencion:
+      ttl-mensaje-ms: 60000              # un pedido no consumido en 60 s se va a la DLQ (motivo "expired")
+      max-mensajes: 1000                 # si la cola supera 1000 mensajes, los mas antiguos van a la DLQ
+      ttl-dlq-ms: 86400000               # los mensajes en la DLQ se conservan 24 h para analisis
+    reintentos:
+      max-intentos: 3
+      intervalo-inicial-ms: 1000
+      multiplicador: 2.0
+    dlq:
+      # true: DlqAuditoriaConsumer registra en el log cada mensaje muerto y lo retira de la DLQ.
+      # false: los mensajes quedan acumulados en la DLQ (util para mostrarlos en el dashboard).
+      auditor-activo: ${DLQ_AUDITOR_ACTIVO:true}

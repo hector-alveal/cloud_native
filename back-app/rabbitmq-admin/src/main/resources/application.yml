@@ -1,0 +1,29 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: rabbitmq-admin
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:admin}
+    password: ${RABBITMQ_PASSWORD:admin123}
+
+# Datos de la App Registration en Azure AD (IDaaS)
+azure:
+  ad:
+    tenant-id: ${AZURE_TENANT_ID:a70c6bf7-a13d-4110-9625-747412057e28}
+    client-id: ${AZURE_CLIENT_ID:69ceeda7-0b2f-441c-9c63-f537ab6db86f}
+
+pedidos360:
+  seguridad:
+    # true  -> todos los endpoints de administracion exigen un JWT valido de Azure AD.
+    # false -> SOLO para pruebas locales con Postman/Swagger sin token.
+    jwt-habilitado: ${SEGURIDAD_JWT_HABILITADO:true}
+  cors:
+    origenes-permitidos: ${CORS_ORIGINS:http://localhost:4200,http://52.200.216.83:4200}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

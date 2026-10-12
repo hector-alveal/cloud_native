@@ -1,7 +1,8 @@
 package com.pedidos360.carrito.controller;
 
+import com.pedidos360.carrito.dto.PedidoCreadoEvent;
 import com.pedidos360.carrito.model.ItemCarrito;
-import com.pedidos360.carrito.repository.ItemCarritoRepository;
+import com.pedidos360.carrito.service.CarritoService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,11 +15,11 @@ import java.util.List;
 @RequestMapping("/api/carrito")
 public class CarritoController {
 
-    private final ItemCarritoRepository itemCarritoRepository;
+    private final CarritoService carritoService;
 
     @Autowired
-    public CarritoController(ItemCarritoRepository itemCarritoRepository) {
-        this.itemCarritoRepository = itemCarritoRepository;
+    public CarritoController(CarritoService carritoService) {
+        this.carritoService = carritoService;
     }
 
     // Endpoint simple para verificar que el servicio esta arriba (util para probar
@@ -33,32 +34,34 @@ public class CarritoController {
     // en lugar de venir como parametro de la URL.
     @GetMapping("/{usuarioId}")
     public ResponseEntity<List<ItemCarrito>> listarPorUsuario(@PathVariable String usuarioId) {
-        return ResponseEntity.ok(itemCarritoRepository.findByUsuarioId(usuarioId));
+        return ResponseEntity.ok(carritoService.listarPorUsuario(usuarioId));
     }
 
     @PostMapping
     public ResponseEntity<ItemCarrito> agregarItem(@Valid @RequestBody ItemCarrito item) {
-        ItemCarrito guardado = itemCarritoRepository.save(item);
+        ItemCarrito guardado = carritoService.agregar(item);
         return ResponseEntity.status(HttpStatus.CREATED).body(guardado);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ItemCarrito> actualizarCantidad(@PathVariable Long id, @RequestBody ItemCarrito datos) {
-        return itemCarritoRepository.findById(id)
-                .map(item -> {
-                    item.setCantidad(datos.getCantidad());
-                    item.setTotal(item.getCantidad() * item.getPrecioUnitario());
-                    return ResponseEntity.ok(itemCarritoRepository.save(item));
-                })
+        return carritoService.actualizarCantidad(id, datos)
+            .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarItem(@PathVariable Long id) {
-        if (!itemCarritoRepository.existsById(id)) {
+        if (!carritoService.eliminar(id)) {
             return ResponseEntity.notFound().build();
         }
-        itemCarritoRepository.deleteById(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // Confirma el carrito como pedido. Responde 202 Accepted porque el descuento de stock
+    // (productos-catalogo) y el ticket (venta-carrito) se procesan despues, via RabbitMQ.
+    @PostMapping("/{usuarioId}/confirmar")
+    public ResponseEntity<PedidoCreadoEvent> confirmarPedido(@PathVariable("usuarioId") String usuarioId) {
+        return ResponseEntity.accepted().body(carritoService.confirmarPedido(usuarioId));
     }
 }

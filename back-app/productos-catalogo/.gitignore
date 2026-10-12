@@ -24,6 +24,7 @@ target/
 
 ### Credenciales / configuracion local (NO subir) ###
 application-local.properties
+application-local.yml
 application-dev.properties
 *.env
 .env

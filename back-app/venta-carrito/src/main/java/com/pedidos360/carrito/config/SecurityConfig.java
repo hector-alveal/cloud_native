@@ -30,6 +30,11 @@ public class SecurityConfig {
     @Value("${azure.ad.client-id}")
     private String clientId;
 
+    // Origenes del frontend Angular. Se configura por variable de entorno CORS_ORIGINS
+    // porque la IP publica de la EC2 cambia en cada sesion de AWS Academy.
+    @Value("${pedidos360.cors.origenes-permitidos}")
+    private String[] origenesPermitidos;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -63,7 +68,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:4200", "http://52.200.216.83:4200"));
+        configuration.setAllowedOrigins(List.of(origenesPermitidos));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

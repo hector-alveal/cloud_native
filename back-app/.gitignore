@@ -1,0 +1,39 @@
+# ---- Maven / Java ----
+target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+HELP.md
+
+# ---- IDEs ----
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.settings/
+.project
+.classpath
+.factorypath
+.apt_generated
+.springBeans
+.sts4-cache/
+
+# ---- Sistema operativo ----
+.DS_Store
+Thumbs.db
+
+# ---- Logs ----
+*.log
+logs/
+
+# ---- Credenciales / configuracion local (NO subir) ----
+.env
+*.env
+application-local.yml
+application-local.properties
+application-dev.yml
+application-dev.properties
+
+# ---- Herramientas del IDE (asistente de migracion de Java) ----
+.github/modernize/

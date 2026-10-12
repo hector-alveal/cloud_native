@@ -1,0 +1,1009 @@
+{
+  "info": {
+    "_postman_id": "da484798-4195-468d-9330-d44bf556c0f6",
+    "name": "Pedidos360 - Backend (RabbitMQ)",
+    "description": "Pega el JWT de Azure AD en la variable de coleccion 'token'. Ejecuta las carpetas en orden.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "catalogoUrl",
+      "value": "http://localhost:8081"
+    },
+    {
+      "key": "carritoUrl",
+      "value": "http://localhost:8082"
+    },
+    {
+      "key": "adminUrl",
+      "value": "http://localhost:8083"
+    },
+    {
+      "key": "usuarioId",
+      "value": "user-123"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Catalogo",
+      "item": [
+        {
+          "name": "Ping (publico)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{catalogoUrl}}/api/productos/ping",
+              "host": [
+                "{{catalogoUrl}}"
+              ],
+              "path": [
+                "api",
+                "productos",
+                "ping"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar productos sin token -> 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{catalogoUrl}}/api/productos",
+              "host": [
+                "{{catalogoUrl}}"
+              ],
+              "path": [
+                "api",
+                "productos"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 401\", function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear producto",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{catalogoUrl}}/api/productos",
+              "host": [
+                "{{catalogoUrl}}"
+              ],
+              "path": [
+                "api",
+                "productos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Hamburguesa Clasica\",\n  \"descripcion\": \"Con queso y tocino\",\n  \"precio\": 4990,\n  \"stock\": 10,\n  \"categoria\": \"Hamburguesas\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 201\", function () { pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar productos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{catalogoUrl}}/api/productos",
+              "host": [
+                "{{catalogoUrl}}"
+              ],
+              "path": [
+                "api",
+                "productos"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ver producto 1 (revisar stock)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{catalogoUrl}}/api/productos/1",
+              "host": [
+                "{{catalogoUrl}}"
+              ],
+              "path": [
+                "api",
+                "productos",
+                "1"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Carrito y pedido (flujo RabbitMQ)",
+      "item": [
+        {
+          "name": "Agregar item al carrito",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{carritoUrl}}/api/carrito",
+              "host": [
+                "{{carritoUrl}}"
+              ],
+              "path": [
+                "api",
+                "carrito"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"{{usuarioId}}\",\n  \"productoId\": 1,\n  \"nombreProducto\": \"Hamburguesa Clasica\",\n  \"cantidad\": 2,\n  \"precioUnitario\": 4990\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 201\", function () { pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ver carrito",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{carritoUrl}}/api/carrito/{{usuarioId}}",
+              "host": [
+                "{{carritoUrl}}"
+              ],
+              "path": [
+                "api",
+                "carrito",
+                "{{usuarioId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Confirmar pedido -> publica pedido.creado",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{carritoUrl}}/api/carrito/{{usuarioId}}/confirmar",
+              "host": [
+                "{{carritoUrl}}"
+              ],
+              "path": [
+                "api",
+                "carrito",
+                "{{usuarioId}}",
+                "confirmar"
+              ]
+            },
+            "description": "Revisar logs: [PRODUCTOR], [STOCK] OK -> ACK, [TICKET] Comprobante generado. Luego 'Ver producto 1' muestra el stock descontado."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 202\", function () { pm.response.to.have.status(202); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Confirmar carrito vacio -> 422",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{carritoUrl}}/api/carrito/{{usuarioId}}/confirmar",
+              "host": [
+                "{{carritoUrl}}"
+              ],
+              "path": [
+                "api",
+                "carrito",
+                "{{usuarioId}}",
+                "confirmar"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 422\", function () { pm.response.to.have.status(422); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Administrador RabbitMQ",
+      "item": [
+        {
+          "name": "Crear cola con DLQ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{adminUrl}}/api/rabbitmq/queues",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "api",
+                "rabbitmq",
+                "queues"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"notificaciones.email.queue\",\n  \"conDlq\": true,\n  \"ttlMs\": 60000,\n  \"maxMensajes\": 500\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 201\", function () { pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar cola",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{adminUrl}}/api/rabbitmq/queues/notificaciones.email.queue",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "api",
+                "rabbitmq",
+                "queues",
+                "notificaciones.email.queue"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear exchange",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{adminUrl}}/api/rabbitmq/exchanges",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "api",
+                "rabbitmq",
+                "exchanges"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"notificaciones.exchange\",\n  \"tipo\": \"DIRECT\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 201\", function () { pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear binding",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{adminUrl}}/api/rabbitmq/bindings",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "api",
+                "rabbitmq",
+                "bindings"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"exchange\": \"notificaciones.exchange\",\n  \"cola\": \"notificaciones.email.queue\",\n  \"routingKey\": \"notificacion.email\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 201\", function () { pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Eliminar binding",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{adminUrl}}/api/rabbitmq/bindings?exchange=notificaciones.exchange&cola=notificaciones.email.queue&routingKey=notificacion.email",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "api",
+                "rabbitmq",
+                "bindings"
+              ],
+              "query": [
+                {
+                  "key": "exchange",
+                  "value": "notificaciones.exchange"
+                },
+                {
+                  "key": "cola",
+                  "value": "notificaciones.email.queue"
+                },
+                {
+                  "key": "routingKey",
+                  "value": "notificacion.email"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Eliminar exchange",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{adminUrl}}/api/rabbitmq/exchanges/notificaciones.exchange",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "api",
+                "rabbitmq",
+                "exchanges",
+                "notificaciones.exchange"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Eliminar cola",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{adminUrl}}/api/rabbitmq/queues/notificaciones.email.queue",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "api",
+                "rabbitmq",
+                "queues",
+                "notificaciones.email.queue"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Eliminar DLQ de la cola",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{adminUrl}}/api/rabbitmq/queues/notificaciones.email.queue.dlq",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "api",
+                "rabbitmq",
+                "queues",
+                "notificaciones.email.queue.dlq"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Eliminar DLX de la cola",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{adminUrl}}/api/rabbitmq/exchanges/notificaciones.email.queue.dlx",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "api",
+                "rabbitmq",
+                "exchanges",
+                "notificaciones.email.queue.dlx"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Validaciones del administrador (deben fallar)",
+      "item": [
+        {
+          "name": "Cola con nombre vacio -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{adminUrl}}/api/rabbitmq/queues",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "api",
+                "rabbitmq",
+                "queues"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cola con prefijo reservado amq. -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{adminUrl}}/api/rabbitmq/queues",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "api",
+                "rabbitmq",
+                "queues"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"amq.prueba\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cola QUORUM no durable -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{adminUrl}}/api/rabbitmq/queues",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "api",
+                "rabbitmq",
+                "queues"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"pagos.queue\",\n  \"tipo\": \"QUORUM\",\n  \"durable\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cola con TTL negativo -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{adminUrl}}/api/rabbitmq/queues",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "api",
+                "rabbitmq",
+                "queues"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"pagos.queue\",\n  \"ttlMs\": -1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Exchange con tipo invalido -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{adminUrl}}/api/rabbitmq/exchanges",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "api",
+                "rabbitmq",
+                "exchanges"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"pagos.exchange\",\n  \"tipo\": \"CIRCULAR\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Binding con exchange inexistente -> 404",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{adminUrl}}/api/rabbitmq/bindings",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "api",
+                "rabbitmq",
+                "bindings"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"exchange\": \"no.existe\",\n  \"cola\": \"pedidos.stock.queue\",\n  \"routingKey\": \"x\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 404\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear cola que ya existe -> 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{adminUrl}}/api/rabbitmq/queues",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "api",
+                "rabbitmq",
+                "queues"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"pedidos.stock.queue\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 409\", function () { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar cola inexistente -> 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{adminUrl}}/api/rabbitmq/queues/fantasma.queue",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "api",
+                "rabbitmq",
+                "queues",
+                "fantasma.queue"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 404\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -25,12 +25,17 @@ import java.util.List;
 public class SecurityConfig {
 
     // Tenant y client id de la App Registration creada en Azure AD (guias 1.2.3 / 1.2.5).
-    // Se leen desde application.properties (que a su vez los toma de variables de entorno).
+    // Se leen desde application.yml (que a su vez los toma de variables de entorno).
     @Value("${azure.ad.tenant-id}")
     private String tenantId;
 
     @Value("${azure.ad.client-id}")
     private String clientId;
+
+    // Origenes del frontend Angular. Se configura por variable de entorno CORS_ORIGINS
+    // porque la IP publica de la EC2 cambia en cada sesion de AWS Academy.
+    @Value("${pedidos360.cors.origenes-permitidos}")
+    private String[] origenesPermitidos;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -69,7 +74,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:4200", "http://52.200.216.83:4200"));
+        configuration.setAllowedOrigins(List.of(origenesPermitidos));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

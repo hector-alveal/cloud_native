@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  POM agregador: permite compilar y probar los 3 microservicios con un solo comando
+  desde esta carpeta:   mvn clean test
+  Cada microservicio sigue siendo independiente (tiene su propio pom, Dockerfile y puerto).
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.pedidos360</groupId>
+    <artifactId>pedidos360-backend</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>pedidos360-backend</name>
+
+    <modules>
+        <module>productos-catalogo</module>
+        <module>venta-carrito</module>
+        <module>rabbitmq-admin</module>
+    </modules>
+</project>
