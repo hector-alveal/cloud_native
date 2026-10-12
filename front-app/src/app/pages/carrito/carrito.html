@@ -2,22 +2,22 @@
 
     <h1>Mi carrito 🛒</h1>
 
-    @if (cargando) {
+    @if (cargando()) {
 
         <p>Cargando tu carrito...</p>
 
-    } @else if (pedidoConfirmado) {
+    } @else if (pedidoConfirmado(); as pedido) {
 
         <div class="pedido-confirmado">
 
             <h2>¡Pedido recibido!</h2>
 
             <p>
-                N° de pedido: <strong>{{ pedidoConfirmado.pedidoId }}</strong>
+                N° de pedido: <strong>{{ pedido.pedidoId }}</strong>
             </p>
 
             <p>
-                Total: ${{ pedidoConfirmado.total | number:'1.0-0' }}
+                Total: ${{ pedido.total | number:'1.0-0' }}
             </p>
 
             <p>
@@ -26,7 +26,7 @@
 
         </div>
 
-    } @else if (items.length === 0) {
+    } @else if (items().length === 0) {
 
         <div class="carrito-vacio">
 
@@ -42,7 +42,7 @@
 
         <div class="carrito-items">
 
-            @for (item of items; track item.producto.id) {
+            @for (item of items(); track item.backendId) {
 
                 <div class="cart-item">
 
@@ -112,17 +112,17 @@
 
             <button
                 class="comprar"
-                [disabled]="confirmando"
+                [disabled]="confirmando()"
                 (click)="confirmar()">
 
-                {{ confirmando ? 'Confirmando...' : 'Continuar compra' }}
+                {{ confirmando() ? 'Confirmando...' : 'Continuar compra' }}
 
             </button>
 
-            @if (errorPedido) {
+            @if (errorPedido()) {
 
                 <p class="error-pedido">
-                    {{ errorPedido }}
+                    {{ errorPedido() }}
                 </p>
 
             }

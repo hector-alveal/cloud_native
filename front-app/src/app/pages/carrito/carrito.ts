@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 
 import { CarritoService, PedidoConfirmado } from '../../services/carrito';
@@ -12,12 +12,14 @@ import { ItemCarrito } from '../../components/models/carrito';
 })
 export class CarritoComponent implements OnInit {
 
-    items: ItemCarrito[] = [];
-    cargando = true;
+    // Signals: la vista se actualiza apenas cambia el valor, tambien cuando la respuesta
+    // HTTP llega fuera de la zona de Angular (pasa con el interceptor de MSAL).
+    items = signal<ItemCarrito[]>([]);
+    cargando = signal(true);
 
-    confirmando = false;
-    pedidoConfirmado: PedidoConfirmado | null = null;
-    errorPedido = '';
+    confirmando = signal(false);
+    pedidoConfirmado = signal<PedidoConfirmado | null>(null);
+    errorPedido = signal('');
 
     constructor(
         private carritoService: CarritoService
@@ -66,7 +68,7 @@ export class CarritoComponent implements OnInit {
 
     vaciar(): void {
 
-        this.items
+        this.items()
             .filter((item) => item.backendId)
             .forEach((item) => {
                 this.carritoService.eliminarItem(item.backendId!).subscribe();
@@ -79,25 +81,25 @@ export class CarritoComponent implements OnInit {
 
     confirmar(): void {
 
-        this.confirmando = true;
-        this.errorPedido = '';
+        this.confirmando.set(true);
+        this.errorPedido.set('');
 
         this.carritoService.confirmarPedido().subscribe({
             next: (pedido) => {
-                this.pedidoConfirmado = pedido;
-                this.items = [];
-                this.confirmando = false;
+                this.pedidoConfirmado.set(pedido);
+                this.items.set([]);
+                this.confirmando.set(false);
             },
             error: (err) => {
                 console.error('Error al confirmar el pedido', err);
                 if (err.status === 422) {
-                    this.errorPedido = 'Tu carrito está vacío.';
+                    this.errorPedido.set('Tu carrito está vacío.');
                 } else if (err.status === 503) {
-                    this.errorPedido = 'El servicio de pedidos no está disponible. Tu carrito sigue guardado, intenta de nuevo en unos minutos.';
+                    this.errorPedido.set('El servicio de pedidos no está disponible. Tu carrito sigue guardado, intenta de nuevo en unos minutos.');
                 } else {
-                    this.errorPedido = 'No se pudo confirmar el pedido. Intenta de nuevo.';
+                    this.errorPedido.set('No se pudo confirmar el pedido. Intenta de nuevo.');
                 }
-                this.confirmando = false;
+                this.confirmando.set(false);
             }
         });
 
@@ -105,7 +107,7 @@ export class CarritoComponent implements OnInit {
 
     obtenerTotal(): number {
 
-        return this.items.reduce(
+        return this.items().reduce(
             (total, item) => total + (item.producto.precio * item.cantidad),
             0
         );
@@ -114,16 +116,16 @@ export class CarritoComponent implements OnInit {
 
     private cargarCarrito(): void {
 
-        this.cargando = true;
+        this.cargando.set(true);
 
         this.carritoService.obtenerItems().subscribe({
             next: (items) => {
-                this.items = items;
-                this.cargando = false;
+                this.items.set(items);
+                this.cargando.set(false);
             },
             error: (err) => {
                 console.error('Error al obtener el carrito desde el API Gateway', err);
-                this.cargando = false;
+                this.cargando.set(false);
             }
         });
 

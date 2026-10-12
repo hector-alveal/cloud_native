@@ -5,6 +5,7 @@ import { MsalService } from '@azure/msal-angular';
 
 import { Producto } from '../components/models/producto';
 import { ItemCarrito } from '../components/models/carrito';
+import { PRODUCTOS } from '../components/data/producto';
 import { environment } from '../../environments/environment';
 
 // Forma en la que el backend (venta-carrito) devuelve cada item.
@@ -94,7 +95,8 @@ export class CarritoService {
         return {
             backendId: item.id,
             cantidad: item.cantidad,
-            producto: productoCompleto ?? {
+            // El backend de carrito no guarda imagen ni descripcion: se toman del catalogo del front.
+            producto: productoCompleto ?? PRODUCTOS.find((p) => p.id === item.productoId) ?? {
                 id: item.productoId,
                 nombre: item.nombreProducto,
                 descripcion: '',
