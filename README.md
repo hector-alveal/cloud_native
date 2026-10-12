@@ -135,7 +135,29 @@ Escribir `yes`. Así no se gasta el saldo del laboratorio.
 3. En los logs:
    - `venta-carrito`: `[PRODUCTOR] Pedido ... publicado` y `[TICKET] Comprobante generado`
    - `productos-catalogo`: `[STOCK] OK pedido ...: stock descontado -> ACK`
-4. En el dashboard (`http://IP:15672`), pestaña **Queues and Streams**: las colas muestran el mensaje entrando y saliendo.
+
+   Cómo leer una línea del log, por ejemplo
+   `2026-10-12T18:47:21Z  INFO ... [venta-carrito] ... TicketConsumer : [TICKET] OK pedido 144c5a6a-... -> ACK`:
+
+   | Parte | Significado |
+   |---|---|
+   | `2026-10-12T18:47:21Z` | Fecha y hora en UTC (3 horas más que en Chile) |
+   | `INFO` | Nivel informativo. Un problema aparece como `WARN` o `ERROR` |
+   | `[venta-carrito]` y `TicketConsumer` | El microservicio y la clase que escribieron la línea |
+   | `pedido 144c5a6a-...` | El id completo del pedido. Sus primeros 8 caracteres son el número que ve el usuario en pantalla |
+   | `-> ACK` | El consumidor confirmó el mensaje a RabbitMQ y este salió de la cola |
+4. En el dashboard (`http://IP:15672`), pestaña **Queues and Streams**: los contadores quedan en 0 porque los consumidores procesan el mensaje en milisegundos. Para ver que pasó, hacer clic en `pedidos.stock.queue` y, en el gráfico **Message rates**, elegir **Last ten minutes**: aparece un pico de *Publish* y de *Consumer ack* por cada pedido.
+
+Para ver un mensaje detenido en la cola, apagar un consumidor por SSH antes de confirmar el pedido:
+
+```bash
+docker stop productos-catalogo
+```
+
+Al confirmar un pedido, `pedidos.stock.queue` muestra **Ready = 1**. Luego hay dos caminos:
+
+- `docker start productos-catalogo` antes de 60 segundos: el mensaje se consume y vuelve a 0.
+- Esperar 60 segundos: el mensaje vence (TTL) y pasa a `pedidos.stock.dlq`. Al volver a iniciar el servicio, el log muestra `[DLQ] ... motivo: expired`.
 
 ### 2. Mensaje fallido que termina en la DLQ
 
@@ -156,8 +178,31 @@ Otra variante: publicar el texto `hola` como payload (mensaje inválido) y llega
 
 ### 3. Microservicio administrador de RabbitMQ
 
-1. Obtener el JWT: en el navegador con la sesión iniciada, `F12` → **Network** → cualquier llamada al backend → **Headers** → copiar el valor de `Authorization` sin la palabra `Bearer`.
-2. En Postman, importar `back-app/postman/Pedidos360-backend.postman_collection.json` y editar las variables de la colección:
+Todo se hace con Postman. Las peticiones ya vienen armadas en una colección: no hay que escribir ninguna, solo abrirlas y pulsar **Send**.
+
+#### a) Copiar el JWT
+
+1. En el navegador, con la sesión iniciada en `http://localhost:4200`, pulsar `F12`.
+2. Pestaña **Network** y recargar la página del carrito.
+3. Hacer clic en una llamada al backend (por ejemplo la que va a `IP:8082/api/carrito/...`).
+4. En **Headers** → **Request Headers**, buscar `Authorization`.
+5. Copiar el valor **sin** la palabra `Bearer` ni el espacio. Empieza con `eyJ`.
+
+El token dura cerca de una hora. Si las peticiones empiezan a responder 401, copiar uno nuevo.
+
+#### b) Importar la colección (solo la primera vez)
+
+1. En Postman, pulsar **Import** (arriba a la izquierda).
+2. Arrastrar el archivo `back-app/postman/Pedidos360-backend.postman_collection.json`.
+3. En el panel izquierdo aparece **Pedidos360 - Backend (RabbitMQ)** con cuatro carpetas.
+
+#### c) Poner la IP y el token en las variables
+
+La IP **no** se escribe en la barra de direcciones de cada petición. Las peticiones usan comodines como `{{adminUrl}}`, y Postman los reemplaza por lo que se defina aquí:
+
+1. En el panel izquierdo, hacer clic en el nombre **Pedidos360 - Backend (RabbitMQ)** (el título de la colección, no una carpeta ni una petición).
+2. En la pestaña que se abre, hacer clic en **Variables**.
+3. Hacer doble clic en el valor de cada fila y reemplazarlo (si hay dos columnas, usar **Current value**):
 
    | Variable | Valor |
    |---|---|
@@ -165,10 +210,59 @@ Otra variante: publicar el texto `hola` como payload (mensaje inválido) y llega
    | `carritoUrl` | `http://IP:8082` |
    | `adminUrl` | `http://IP:8083` |
    | `token` | el JWT copiado |
+   | `usuarioId` | no se cambia |
 
-3. Ejecutar en orden: crear cola con DLQ, crear exchange, crear binding. Mostrar que aparecen en el dashboard.
-4. Mostrar una validación: crear una cola con `"nombre": ""` responde **400** con el detalle del error.
-5. Eliminar el binding, el exchange y la cola. Mostrar que desaparecen del dashboard.
+   Sin espacios y sin `/` al final.
+4. Pulsar **Save** (`Ctrl + S`). Sin guardar, se siguen usando los valores anteriores.
+
+Si por error se modificó la URL de una petición: cerrar su pestaña y elegir **Don't save**.
+
+#### d) Cómo se ejecuta una petición
+
+1. En el panel izquierdo, abrir una carpeta con la flecha `>` y hacer clic en la petición.
+2. No cambiar nada. Pulsar el botón azul **Send**.
+3. Abajo, en **Response**, aparece el código de estado (por ejemplo `201 Created`) y la respuesta.
+
+Para comprobar que las variables quedaron bien: **1. Catalogo → Listar productos** debe responder **200** con los 5 productos.
+
+#### e) Crear los recursos
+
+Carpeta **3. Administrador RabbitMQ**, en este orden. Después de cada **Send**, recargar el dashboard (`F5`) para ver el recurso nuevo.
+
+| # | Petición | Responde | Qué aparece en el dashboard (`http://IP:15672`) |
+|---|---|---|---|
+| 1 | Crear cola con DLQ | 201 | **Queues and Streams**: `notificaciones.email.queue` y `notificaciones.email.queue.dlq` |
+| 2 | Crear exchange | 201 | **Exchanges**: `notificaciones.exchange` |
+| 3 | Crear binding | 201 | **Exchanges** → clic en `notificaciones.exchange` → **Bindings**: la cola enlazada con `notificacion.email` |
+
+#### f) Mostrar una validación
+
+Carpeta **4. Validaciones del administrador (deben fallar)** → **Cola con nombre vacio -> 400** → **Send**.
+
+Responde **400 Bad Request** con el detalle del error. Que falle es lo correcto: demuestra que la API no permite crear una cola sin nombre. El código esperado de cada petición de esta carpeta está en su nombre.
+
+#### g) Eliminar lo creado
+
+De vuelta en la carpeta **3. Administrador RabbitMQ**, en este orden:
+
+| # | Petición | Responde |
+|---|---|---|
+| 1 | Eliminar binding | 204 |
+| 2 | Eliminar exchange | 204 |
+| 3 | Eliminar cola | 204 |
+| 4 | Eliminar DLQ de la cola | 204 |
+| 5 | Eliminar DLX de la cola | 204 |
+
+El 204 significa "eliminado" y la respuesta sale vacía. Al recargar el dashboard, en **Queues and Streams** quedan solo las 4 colas `pedidos.*`.
+
+#### Si una petición responde distinto
+
+| Código | Causa | Solución |
+|---|---|---|
+| 401 | El token venció o quedó mal pegado | Copiar uno nuevo en la variable `token` y guardar |
+| 409 al crear | El recurso ya existe de una prueba anterior | Ejecutar primero las peticiones de eliminar |
+| 404 al eliminar | Ya estaba eliminado | Nada, seguir con la siguiente |
+| `Could not send request` | Una URL quedó mal escrita | Revisar las variables del paso c) |
 
 ### 4. Código que respalda la pauta
 

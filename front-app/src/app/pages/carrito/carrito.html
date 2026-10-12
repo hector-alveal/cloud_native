@@ -13,7 +13,7 @@
             <h2>¡Pedido recibido!</h2>
 
             <p>
-                N° de pedido: <strong>{{ pedido.pedidoId }}</strong>
+                N° de pedido: <strong>{{ pedido.pedidoId.slice(0, 8).toUpperCase() }}</strong>
             </p>
 
             <p>
