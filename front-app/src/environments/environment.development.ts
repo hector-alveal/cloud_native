@@ -15,6 +15,6 @@ export const environment = {
 
   // URL de cada microservicio en desarrollo (ng serve). Para probar contra la EC2,
   // reemplazar localhost por la IP que imprime terraform apply.
-  catalogoUrl: 'http://localhost:8081',
-  carritoUrl: 'http://localhost:8082',
+catalogoUrl: 'http://100.24.34.144:8081',
+carritoUrl: 'http://100.24.34.144:8082',
 };
