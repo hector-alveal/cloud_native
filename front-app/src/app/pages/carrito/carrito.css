@@ -124,3 +124,29 @@
 
     color: white;
 }
+
+.comprar:disabled {
+    opacity: 0.6;
+
+    cursor: not-allowed;
+}
+
+.error-pedido {
+    margin-top: 12px;
+
+    color: #dc3545;
+}
+
+.pedido-confirmado {
+    padding: 30px;
+
+    background-color: white;
+
+    border-radius: 10px;
+
+    text-align: center;
+}
+
+.pedido-confirmado h2 {
+    color: #198754;
+}

@@ -43,7 +43,8 @@ export function MSALGuardConfigFactory(): MsalGuardConfiguration {
 // llamadas HTTP hacia el API Gateway, sin tener que hacerlo manualmente en cada servicio.
 export function MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
   const protectedResourceMap = new Map<string, Array<string>>();
-  protectedResourceMap.set(`${environment.apiBaseUrl}/*`, environment.azureAd.apiScopes);
+  protectedResourceMap.set(`${environment.catalogoUrl}/*`, environment.azureAd.apiScopes);
+  protectedResourceMap.set(`${environment.carritoUrl}/*`, environment.azureAd.apiScopes);
 
   return {
     interactionType: InteractionType.Redirect,

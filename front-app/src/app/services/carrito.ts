@@ -18,6 +18,14 @@ interface ItemCarritoBackend {
     total: number;
 }
 
+// Respuesta de POST /api/carrito/{usuarioId}/confirmar
+export interface PedidoConfirmado {
+    pedidoId: string;
+    usuarioId: string;
+    total: number;
+    items: { productoId: number; nombreProducto: string; cantidad: number; precioUnitario: number }[];
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -27,7 +35,7 @@ export class CarritoService {
     private msalService = inject(MsalService);
 
     // Llama al microservicio venta-carrito a traves del API Manager (AWS API Gateway).
-    private baseUrl = `${environment.apiBaseUrl}/api/carrito`;
+    private baseUrl = `${environment.carritoUrl}/api/carrito`;
 
     // El usuarioId viene de la cuenta autenticada con MSAL (no se inventa en el frontend).
     private obtenerUsuarioId(): string {
@@ -69,6 +77,14 @@ export class CarritoService {
 
     eliminarItem(backendId: number): Observable<void> {
         return this.http.delete<void>(`${this.baseUrl}/${backendId}`);
+    }
+
+    // Confirma el carrito como pedido. El backend responde 202 de inmediato y publica el
+    // evento "pedido.creado" en RabbitMQ: el stock y el ticket se procesan despues.
+    confirmarPedido(): Observable<PedidoConfirmado> {
+        const usuarioId = this.obtenerUsuarioId();
+
+        return this.http.post<PedidoConfirmado>(`${this.baseUrl}/${usuarioId}/confirmar`, null);
     }
 
     // Convierte la respuesta del backend al modelo que usan las paginas/componentes del front.

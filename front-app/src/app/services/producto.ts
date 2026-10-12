@@ -14,7 +14,7 @@ export class ProductoService {
 
     // Llama al microservicio productos-catalogo a traves del API Manager (AWS API Gateway).
     // El JWT se adjunta automaticamente gracias al MsalInterceptor configurado en app.config.ts.
-    private baseUrl = `${environment.apiBaseUrl}/api/productos`;
+    private baseUrl = `${environment.catalogoUrl}/api/productos`;
 
     obtenerProductos(): Observable<Producto[]> {
         return this.http.get<Producto[]>(this.baseUrl);

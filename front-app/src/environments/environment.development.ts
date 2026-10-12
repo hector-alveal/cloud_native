@@ -13,6 +13,8 @@ export const environment = {
     apiScopes: ['api://69ceeda7-0b2f-441c-9c63-f537ab6db86f/access_as_user'],
   },
 
-  // URL base del API Manager (AWS API Gateway) que protege productos-catalogo y venta-carrito
-  apiBaseUrl: 'https://tab2w56317.execute-api.us-east-1.amazonaws.com',
+  // URL de cada microservicio en desarrollo (ng serve). Para probar contra la EC2,
+  // reemplazar localhost por la IP que imprime terraform apply.
+  catalogoUrl: 'http://localhost:8081',
+  carritoUrl: 'http://localhost:8082',
 };

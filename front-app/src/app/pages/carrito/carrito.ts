@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 
-import { CarritoService } from '../../services/carrito';
+import { CarritoService, PedidoConfirmado } from '../../services/carrito';
 import { ItemCarrito } from '../../components/models/carrito';
 
 @Component({
@@ -14,6 +14,10 @@ export class CarritoComponent implements OnInit {
 
     items: ItemCarrito[] = [];
     cargando = true;
+
+    confirmando = false;
+    pedidoConfirmado: PedidoConfirmado | null = null;
+    errorPedido = '';
 
     constructor(
         private carritoService: CarritoService
@@ -70,6 +74,32 @@ export class CarritoComponent implements OnInit {
 
         // Pequeña espera para que las eliminaciones lleguen al backend antes de refrescar
         setTimeout(() => this.cargarCarrito(), 400);
+
+    }
+
+    confirmar(): void {
+
+        this.confirmando = true;
+        this.errorPedido = '';
+
+        this.carritoService.confirmarPedido().subscribe({
+            next: (pedido) => {
+                this.pedidoConfirmado = pedido;
+                this.items = [];
+                this.confirmando = false;
+            },
+            error: (err) => {
+                console.error('Error al confirmar el pedido', err);
+                if (err.status === 422) {
+                    this.errorPedido = 'Tu carrito está vacío.';
+                } else if (err.status === 503) {
+                    this.errorPedido = 'El servicio de pedidos no está disponible. Tu carrito sigue guardado, intenta de nuevo en unos minutos.';
+                } else {
+                    this.errorPedido = 'No se pudo confirmar el pedido. Intenta de nuevo.';
+                }
+                this.confirmando = false;
+            }
+        });
 
     }
 

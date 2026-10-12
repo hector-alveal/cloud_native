@@ -6,6 +6,26 @@
 
         <p>Cargando tu carrito...</p>
 
+    } @else if (pedidoConfirmado) {
+
+        <div class="pedido-confirmado">
+
+            <h2>¡Pedido recibido!</h2>
+
+            <p>
+                N° de pedido: <strong>{{ pedidoConfirmado.pedidoId }}</strong>
+            </p>
+
+            <p>
+                Total: ${{ pedidoConfirmado.total | number:'1.0-0' }}
+            </p>
+
+            <p>
+                Estamos procesando tu pedido y generando tu comprobante.
+            </p>
+
+        </div>
+
     } @else if (items.length === 0) {
 
         <div class="carrito-vacio">
@@ -90,11 +110,22 @@
 
             </button>
 
-            <button class="comprar">
+            <button
+                class="comprar"
+                [disabled]="confirmando"
+                (click)="confirmar()">
 
-                Continuar compra
+                {{ confirmando ? 'Confirmando...' : 'Continuar compra' }}
 
             </button>
+
+            @if (errorPedido) {
+
+                <p class="error-pedido">
+                    {{ errorPedido }}
+                </p>
+
+            }
 
         </div>
 
