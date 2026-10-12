@@ -26,3 +26,15 @@ variable "instance_type" {
   type        = string
   default     = "t3.medium"
 }
+
+variable "repo_url" {
+  description = "Repositorio público de GitHub que la instancia clona para desplegar el backend"
+  type        = string
+  default     = "https://github.com/hector-alveal/cloud_native.git"
+}
+
+variable "rama" {
+  description = "Rama del repositorio que se despliega"
+  type        = string
+  default     = "main"
+}

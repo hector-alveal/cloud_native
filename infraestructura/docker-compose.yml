@@ -1,0 +1,82 @@
+# Despliegue completo del backend en la EC2: RabbitMQ + MySQL + los 3 microservicios.
+# Lo levanta infraestructura/desplegar.sh (los .jar deben estar compilados antes).
+# Para desarrollo local se sigue usando el docker-compose.yml de la raiz (solo RabbitMQ y MySQL).
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-server
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-server
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: catalogo_db
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  productos-catalogo:
+    build: ../back-app/productos-catalogo
+    container_name: productos-catalogo
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment: &entorno-servicio
+      RABBITMQ_HOST: rabbitmq
+      DB_HOST: mysql
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4200}
+    depends_on: &espera-infra
+      rabbitmq:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+
+  venta-carrito:
+    build: ../back-app/venta-carrito
+    container_name: venta-carrito
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      <<: *entorno-servicio
+      CATALOGO_URL: http://productos-catalogo:8081
+    depends_on: *espera-infra
+
+  rabbitmq-admin:
+    build: ../back-app/rabbitmq-admin
+    container_name: rabbitmq-admin
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4200}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+volumes:
+  rabbitmq_data:
+  mysql_data:

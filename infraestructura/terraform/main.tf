@@ -113,9 +113,9 @@ resource "aws_instance" "servidor_infraestructura" {
   vpc_security_group_ids = [aws_security_group.sg_microservicios.id]
   key_name               = var.key_name
 
-  # Instala Docker y levanta RabbitMQ + MySQL al crear la instancia.
+  # Al crear la instancia: instala Docker, clona el repo y levanta RabbitMQ, MySQL y los 3 microservicios.
   # El replace evita que un salto de linea de Windows (CRLF) rompa el script en Linux.
-  user_data                   = replace(file("${path.module}/arranque.sh"), "\r\n", "\n")
+  user_data                   = replace(templatefile("${path.module}/arranque.sh", { repo_url = var.repo_url, rama = var.rama }), "\r\n", "\n")
   user_data_replace_on_change = true
 
   # Espacio para las imagenes Docker (el disco por defecto de 8 GB queda justo)
@@ -137,7 +137,7 @@ output "instance_public_ip" {
 }
 
 output "rabbitmq_dashboard" {
-  description = "Dashboard de RabbitMQ (admin / admin123). Tarda unos 2-3 minutos en estar disponible tras el apply"
+  description = "Dashboard de RabbitMQ (admin / admin123). El despliegue completo tarda unos 8-10 minutos tras el apply"
   value       = "http://${aws_instance.servidor_infraestructura.public_ip}:15672"
 }
 
